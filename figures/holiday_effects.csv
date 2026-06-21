@@ -1,1 +1,12 @@
-
+holiday,years,mean_effect_pct,min_pct,max_pct
+New Year (1 Jan),3,28.0,3.0,44.0
+Western Christmas (25 Dec),3,19.0,-6.0,41.0
+Women's Day (8 Mar),3,8.0,1.0,14.0
+Constitution Day (28 Jun),4,3.0,-15.0,28.0
+Orthodox Pascha,4,-1.0,-6.0,10.0
+Defenders Day (1 Oct),4,-1.0,-13.0,14.0
+Independence Day (24 Aug),4,-2.0,-19.0,22.0
+Western Easter,4,-2.0,-23.0,10.0
+Victory/Europe Day (9 May),4,-2.0,-12.0,10.0
+Orthodox Christmas (7 Jan),3,-7.0,-33.0,18.0
+Invasion Anniversary (24 Feb),3,-11.0,-19.0,-5.0
