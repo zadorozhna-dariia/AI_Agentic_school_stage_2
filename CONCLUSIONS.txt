@@ -1,0 +1,344 @@
+================================================================================
+UKRAINIAN AIR-RAID ALERT ANALYSIS — CONCLUSIONS
+Dataset: Vadimkin/ukrainian-air-raid-sirens-dataset (official feed, oblast level)
+Trustworthy analysis window: 2022-03-15 to 2025-10-31
+Prepared: project working report
+================================================================================
+
+This document states, as honestly as possible, what the analysis supports,
+what it does not, where the data was sufficient to draw a conclusion and where
+it was not, and how these results can feed further work. It is organised as:
+
+  PART 1 — Plain-language summary (no jargon)
+  PART 2 — What we are confident about
+  PART 3 — What is uncertain or inconclusive
+  PART 4 — Data-quality issues (read this before trusting any number)
+  PART 5 — Methods and key metrics (technical detail)
+  PART 6 — How these conclusions can be used / next steps
+
+A one-line honest verdict up front:
+  This data is EXCELLENT for describing and detecting patterns, and POOR for
+  forecasting the timing of individual alerts. Both halves of that statement
+  are backed by metrics in this report, not asserted.
+
+
+================================================================================
+PART 1 — PLAIN-LANGUAGE SUMMARY
+================================================================================
+
+We analysed roughly four years of official air-raid alerts for Ukraine, broken
+down by region (oblast). After cleaning the data we could reliably study the
+period from mid-March 2022 to the end of October 2025.
+
+What we learned, in plain terms:
+
+* Alerts follow a clear daily rhythm. They are least frequent in the early
+  morning (around 5-7 a.m. local time) and most frequent around midday, with a
+  second rise in the evening. This pattern is strong and consistent when you
+  look at the whole country.
+
+* Alerts are heavily concentrated in front-line and eastern/southern regions
+  (Donetsk, Zaporizhzhia, Kharkiv, Dnipropetrovsk). Western regions get an
+  order of magnitude fewer.
+
+* The overall intensity of the war rose and fell over time, peaking in roughly
+  early-to-mid 2024.
+
+* Some symbolic dates show more alerts than usual — most reliably New Year and,
+  to a lesser degree, the Western-calendar Christmas (25 Dec) and Women's Day
+  (8 March). Surprisingly, the anniversary of the invasion (24 February) tends
+  to have FEWER alerts than the surrounding weeks, not more.
+
+* We could NOT predict when an individual alert will happen. Knowing the day of
+  week, month, or hour barely helps guess tomorrow's alerts in Kyiv. This is
+  expected: alerts are driven by an adversary's decisions, not a natural cycle.
+
+* We CAN, however, reliably flag unusually intense days after the fact, and we
+  can describe the patterns above with confidence.
+
+
+================================================================================
+PART 2 — WHAT WE ARE CONFIDENT ABOUT (well-supported by the data)
+================================================================================
+
+These conclusions rest on large sample sizes (tens of thousands of alerts) and
+are stable across the trustworthy window.
+
+2.1 DIURNAL (HOUR-OF-DAY) SEASONALITY — HIGH CONFIDENCE
+    There is a robust hour-of-day pattern in Kyiv local time: a trough at
+    ~05:00-07:00 (~2.2% of alerts per hour) rising to a midday peak (~12:00,
+    ~5.4%) with a secondary evening elevation near 21:00. Alerts are ~2.5x more
+    likely at midday than at dawn. Based on ~65,000 alerts; not a small-sample
+    artifact.
+
+2.2 REGIONAL CONCENTRATION — HIGH CONFIDENCE
+    Alert counts are dominated by front-line/eastern-southern oblasts: Donetsk
+    (~6,900), Zaporizhzhia (~6,700), Kharkiv (~6,500), Dnipropetrovsk (~5,600).
+    Western oblasts (Lviv, Ivano-Frankivsk, Zakarpattia) sit near ~700 each.
+    This is a structural feature of the conflict's geography.
+
+2.3 WAR-PHASE TREND (NON-STATIONARITY) — HIGH CONFIDENCE
+    Daily alert volume is strongly non-stationary. The STL trend component
+    shows clear phases: high mid-2022, a winter-2022/23 lull, a climb to a peak
+    around early-mid 2024 (busiest month March 2024, ~2,200 alerts; busiest
+    single day 2022-08-24 with 189), then a gradual decline through 2025.
+
+2.4 ANOMALY DETECTION WORKS — HIGH CONFIDENCE (as a descriptive/after-the-fact
+    tool)
+    Flagging days whose count is unusual RELATIVE TO LOCAL TREND + WEEKLY
+    SEASON (STL-residual rolling z-score, |z|>=3) reliably surfaces real
+    large-scale strike days (e.g. 2022-08-24, 2023-08-25, 2023-03-14). 37 such
+    days flagged across all oblasts. This is detection, not prediction.
+
+2.5 DURATION IS HEAVY-TAILED — HIGH CONFIDENCE
+    Non-censored alert durations: median ~40 min, p90 ~182 min, p99 ~540 min.
+    Front-line and some western oblasts show higher medians (~60 min) than
+    central ones (~33 min).
+
+
+================================================================================
+PART 3 — WHAT IS UNCERTAIN OR INCONCLUSIVE (data thin or signal weak)
+================================================================================
+
+3.1 HOLIDAY / SPECIAL-DATE EFFECTS — SUGGESTIVE, NOT CONCLUSIVE
+    Only 3-4 occurrences exist per holiday across the window, so these are
+    directional patterns, not statistically established effects. With that
+    caveat, using a +/-5-day window vs the same-year local baseline:
+
+      ROBUST (every year agreed in direction):
+        - New Year (1 Jan):        ~+28%   (elevated)
+        - Invasion Anniv (24 Feb): ~-11%   (SUPPRESSED, every year below)
+
+      PROBABLE BUT NOISIER:
+        - Western Christmas (25 Dec): ~+19% (one year slightly negative)
+        - Women's Day (8 Mar):        ~+8%
+
+      NO DETECTABLE EFFECT (treat as "no evidence", not "proven zero"):
+        - Orthodox Christmas (7 Jan), both Easters (Western & Orthodox Pascha),
+          9 May, Independence Day (24 Aug), Defenders Day, Constitution Day.
+
+    Honest notes:
+      * The New Year elevation is the single most credible holiday finding (it
+        survives both +/-3 and +/-5 day windows).
+      * The Western vs Orthodox Christmas split is interesting and plausibly
+        real (Ukraine officially moved Christmas to 25 Dec from 2023), but
+        rests on only 3 years.
+      * The 24 Feb SUPPRESSION contradicts the common intuition that
+        anniversaries draw heavier attacks. It is consistent across years but
+        still only 3 data points. Do not over-claim.
+      * Window width matters: +/-3 days captures sharp single-day spikes;
+        +/-5 days captures sustained campaigns but dilutes single spikes. We
+        report +/-5; effects shrink modestly vs +/-3.
+
+3.2 FORECASTING ALERT TIMING — CONCLUSIVELY LIMITED (this IS a firm finding,
+    just a negative one)
+    We can state with confidence that calendar-based forecasting of individual
+    alert timing does NOT work here:
+      * Daily Kyiv City count forecast: a Negative-Binomial GLM on calendar +
+        recent-activity features did NOT beat naive baselines (MAE ~0.90 vs
+        ~0.87 for seasonal-naive; mean of series ~1.3/day). Predictions are off
+        by ~two-thirds of the mean.
+      * Hourly Kyiv City P(>=1 alert): logistic model AUC ~0.57 (barely above
+        chance 0.50), Brier ~0.055 essentially tied with a constant base-rate
+        guess.
+    The reason is structural: onsets are adversary-driven, and the hour-of-day
+    seasonality, while real in aggregate, is itself non-stationary (the test
+    period developed a late-evening peak absent from training).
+
+3.3 SINGLE-REGION SEASONALITY AT FINE GRAIN — INSUFFICIENT SIGNAL
+    The diurnal pattern that is strong nationally is too weak/noisy to exploit
+    at the Kyiv-City hourly level on held-out future data. Aggregate signal !=
+    per-city-hour predictability.
+
+3.4 LUHANSK — NO DATA
+    Only 1 record in the entire official oblast-level set. Excluded from all
+    per-region analysis. No conclusions possible.
+
+3.5 PRE-15-MARCH-2022 AND POST-OCT-2025 — OUT OF SCOPE
+    The official feed starts 2022-03-15 (misses the first ~3 weeks of the
+    full-scale invasion) and degrades after Oct 2025 (see Part 4). Nothing in
+    this report speaks to those periods.
+
+
+================================================================================
+PART 4 — DATA-QUALITY ISSUES (READ BEFORE TRUSTING ANY NUMBER)
+================================================================================
+
+These are not minor footnotes; each one would have corrupted results if missed.
+
+4.1 MASSIVE DUPLICATION (publisher-side artifact) — HANDLED
+    ~50% of raw oblast-level rows were EXACT duplicates (every affected alert
+    appeared exactly twice, byte-for-byte). Investigation showed the file is
+    effectively one history block concatenated with a second copy up to
+    ~2026-01-24, with only the most recent rows appearing once. This is a
+    daily-regeneration pipeline artifact on the publisher's side, NOT two real
+    reports of one alert. We removed them via full-row dedup, which is provably
+    lossless (two records identical down to the second cannot be distinct
+    alerts). IMPORTANT: this must remain a permanent pipeline step — a future
+    refresh could change the duplication pattern.
+
+4.2 FEED COLLAPSE AFTER OCT 2025 — TRUNCATED
+    From November 2025 the feed degrades sharply; from December 2025 ONLY Kyiv
+    City reports any alerts and all 24 other oblasts go silent. This is not a
+    real-world ceasefire — it is a collection failure. We hard-cut the analysis
+    at VALID_END = 2025-10-31. Any apparent "drop to near-zero" in late 2025 is
+    an artifact. Do not interpret it as reduced attacks.
+
+4.3 RIGHT-CENSORED DURATIONS (missed "all-clear") — FLAGGED, NOT DELETED
+    When no end-of-alert signal was recorded, duration is artificially
+    extended. At oblast level only 13 alerts exceed 24h, and ALL are in
+    front-line/border oblasts (Kharkiv, Donetsk, Chernihiv, Sumy, Luhansk)
+    where a genuinely prolonged threat state is plausible. We flagged these
+    (censored=True) and EXCLUDED them from duration statistics, but KEPT their
+    onset in all count statistics. Counts are therefore robust to this issue;
+    duration stats are computed on non-censored alerts only.
+
+4.4 TIMEZONE HANDLING — EXPLICIT
+    Raw timestamps are UTC. All hour-of-day / day-of-week analysis uses Kyiv
+    local time (Europe/Kyiv, DST-aware), because human/operational rhythms
+    follow local time. NOTE: CSV round-trips silently drop timezone metadata;
+    downstream code must re-localise. (Requires the `tzdata` package on systems
+    lacking the IANA database.)
+
+4.5 GRANULARITY CHOICE — DELIBERATE
+    We used oblast level only. The raw file also has raion/hromada rows, but
+    these double-count the same physical alert and contain the extreme
+    duration outliers. Oblast is the consistent unit for regional comparison.
+    Intra-oblast hotspot analysis would require revisiting this.
+
+4.6 OVERLAPPING ALERTS — NONE (but guarded)
+    After dedup, zero overlapping intervals per oblast remain. A defensive
+    merge step is retained in case a future refresh introduces them.
+
+
+================================================================================
+PART 5 — METHODS AND KEY METRICS (technical detail)
+================================================================================
+
+PIPELINE (4 phases, modular Python):
+  ingest.py    load -> oblast filter -> full-row dedup -> drop-invalid ->
+               defensive overlap-merge -> derive duration/censored/Kyiv-local
+  eda.py       daily/monthly counts, hour-of-day & day-of-week shares,
+               regional breakdown, duration distribution, STL decomposition
+  anomaly.py   STL-residual rolling z-score anomaly detection; holiday windows
+               vs same-year local baseline (fixed + movable feasts)
+  forecast.py  Kyiv City daily count (NB GLM vs baselines) and hourly P(alert)
+               (logistic), strict time-based split
+
+PRIMARY METRIC CHOICE:
+  We analyse ALERT ONSET COUNTS as the main signal, not durations. Counts are
+  robust to the censoring problem (a missed all-clear inflates duration, not
+  the fact an alert started).
+
+SEASONALITY / DECOMPOSITION:
+  STL with period=7 (weekly). Annual seasonality is weak/irregular
+  (adversary-driven), so the weekly component is the meaningful periodic term.
+  ADF on Kyiv City daily series: stationary at city level (p<0.001), but the
+  national aggregate trend is strongly non-stationary — both are true at
+  different aggregation levels.
+
+ANOMALY DETECTION:
+  STL removes trend+weekly season; remainder standardised by a 30-day rolling
+  local std (handles changing volatility across war phases); flag |z|>=3. A
+  global z-score was rejected because it would mislabel the busy 2024 period
+  wholesale.
+
+HOLIDAY ANALYSIS:
+  +/-5-day window vs same-year +/-21-day local baseline (window excluded).
+  Pooling across years against a GLOBAL mean is invalid because the war-phase
+  trend confounds it. Movable feasts (Western Easter, Orthodox Pascha) use
+  explicit per-year dates. n=3-4 per holiday — the binding limitation.
+
+FORECAST EVALUATION:
+  Strict time-based split (most-recent 20% held out; no shuffling).
+  Daily: count-appropriate metrics (MAE, RMSE, Poisson deviance); NB GLM
+  because mean-1.3 overdispersed counts make Gaussian ARIMA inappropriate.
+  Hourly: 95% of hours empty -> model P(>=1 alert), evaluate with ROC-AUC and
+  Brier score, not point accuracy.
+  Baselines: global mean and day-of-week seasonal-naive (daily); constant
+  base-rate (hourly).
+
+KEY NUMBERS:
+  Clean alerts: 65,128 | regions: 25 (24 usable) | window: 2022-03-15..2025-10-31
+  Daily Kyiv City: mean 1.32, var 1.86 (overdispersion 1.41), 32% zero-days
+  Hourly Kyiv City: 95% zero-hours, base rate ~5.4%
+  Daily forecast MAE: seasonal-naive 0.865 vs NB 0.895 (NB does not win)
+  Hourly AUC 0.569; Brier 0.0551 (vs 0.0553 baseline)
+
+
+================================================================================
+PART 6 — HOW THESE CONCLUSIONS CAN BE USED / NEXT STEPS
+================================================================================
+
+WHAT THESE RESULTS ARE GOOD FOR:
+  * Situational description & briefing: the diurnal curve, regional ranking,
+    and war-phase trend are solid enough to cite in analytical summaries.
+  * Retrospective anomaly flagging: the STL-residual detector is a usable tool
+    for "which days/regions were unusually intense relative to their baseline".
+  * Baselines for any future model: the naive benchmarks here set the bar any
+    real forecaster must beat. (Calendar-only models do not.)
+  * Hypothesis generation: the holiday signals (New Year up, 24 Feb down) are
+    worth testing against external strike-event datasets.
+
+WHAT THEY SHOULD NOT BE USED FOR:
+  * Predicting when an individual alert will occur. The data does not support
+    it, and we measured exactly how badly calendar features perform.
+  * Reading anything into the post-Oct-2025 data (collection failure).
+  * Duration conclusions that include censored alerts.
+
+NEXT STEP #1 (highest value): SPATIAL NOWCASTING
+  Rationale: the published research on this dataset found a region's alert
+  state is best predicted by its NEIGHBOURS' current state — alerts sweep
+  geographically as drones/missiles transit the country. This is a
+  fundamentally different framing from calendar forecasting:
+    - Target: P(region X enters alert in next 15-30 min | neighbouring regions'
+      alert state in the last 15-30 min).
+    - Build a minute-resolution binary "active alert" panel per oblast, then
+      use lagged neighbour states as features (logistic/gradient-boosted).
+    - Evaluate with time-based split + AUC/precision-recall, since this is an
+      imbalanced nowcasting problem.
+  Before committing, FIRST measure the actual cross-region onset lags in the
+  data (e.g. typical delay between Kharkiv and Poltava/Kyiv onsets) to confirm
+  the spatial signal exists at the chosen horizon.
+
+NEXT STEP #2: EXTERNAL EVENT FUSION
+  Join alert spikes with external datasets (documented mass-strike events,
+  energy-infrastructure campaigns) to (a) validate the anomaly detector and
+  (b) test the holiday hypotheses with proper significance, since the
+  in-dataset holiday n is too small alone.
+
+NEXT STEP #3: DURATION / SURVIVAL MODELLING
+  Treat censored alerts properly (survival analysis / right-censoring) rather
+  than excluding them, especially for front-line oblasts where long alerts are
+  real. This would allow honest duration modelling that the current exclusion
+  approach deliberately avoids.
+
+NEXT STEP #4: BACKFILL EARLY-WAR DATA
+  Optionally splice the volunteer dataset (starts 2022-02-25) to recover the
+  first ~3 weeks, with explicit source-comparison checks, if full-war coverage
+  matters.
+
+NEXT STEP #5: HOURLY MODEL WITH SPATIAL + RECENT-ACTIVITY FEATURES
+  The calendar-only hourly model failed (AUC 0.57). A version adding recent
+  national activity and neighbour states (i.e. merging Step 1) is the only
+  plausible route to beating the base rate at hourly resolution.
+
+
+================================================================================
+BOTTOM LINE
+================================================================================
+DEFINITE (well-supported):
+  diurnal seasonality, regional concentration, war-phase trend, duration
+  heavy tail, and that calendar-based timing forecasting does NOT work.
+SUGGESTIVE (data thin):
+  holiday effects — New Year up and 24 Feb down are the most credible, but all
+  rest on only 3-4 yearly observations.
+NOT CONCLUDABLE (insufficient/absent data):
+  Luhansk, pre-March-2022, post-Oct-2025, and per-city-hour predictability.
+BIGGEST CAVEAT:
+  trust no number outside 2022-03-15..2025-10-31; the raw feed both duplicates
+  history and collapses after Oct 2025.
+MOST PROMISING NEXT STEP:
+  spatial nowcasting from neighbouring regions — the one framing the evidence
+  suggests could actually predict, rather than merely describe.
+================================================================================
